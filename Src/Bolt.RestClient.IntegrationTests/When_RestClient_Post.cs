@@ -18,7 +18,7 @@ namespace Bolt.RestClient.IntegrationTests
         public void Response_Should_Have_Location()
         {
             var response = _sut.CreateBookResponse;
-            response.Location.ShouldEqual("http://localhost:8090/api/v1/books/3001");
+            response.Location.ShouldEqual("http://localhost:8080/api/v1/books/3001");
         }
 
         private RestResponseFixture _sut;

@@ -16,9 +16,14 @@ namespace Bolt.RestClient.Extensions
             return new FluentRestClient(restClient, Uri.EscapeUriString(string.Format(url, args)));
         }
 
-        public static FluentRestClient For(this IRestClient restClient, UrlBuilder urlBuilder)
+        public static FluentRestClient For(this IRestClient restClient, IHaveRoute urlBuilder)
         {
-            return new FluentRestClient(restClient, urlBuilder.Build());
+            return new FluentRestClient(restClient, urlBuilder.Url());
+        }
+
+        public static FluentRestClient For(this IRestClient restClient, IHaveQueryParams urlBuilder)
+        {
+            return new FluentRestClient(restClient, urlBuilder.Url());
         }
     }
 }

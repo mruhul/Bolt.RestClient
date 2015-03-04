@@ -12,7 +12,7 @@ namespace Bolt.RestClient.IntegrationTests.Fixtures
 {
     public class RestResponseFixture
     {
-        private const string BaseUrl = "http://localhost:8090";
+        private const string BaseUrl = "http://localhost:8080";
 
         public RestResponse<IEnumerable<Book>> GetBooksResponse
         {

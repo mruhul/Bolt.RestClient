@@ -1,10 +1,37 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Bolt.RestClient.Builders
 {
-    public class UrlBuilder
+    public interface IHaveHost
+    {
+        IHaveRoute Route(string route, bool doNotEncode = false);
+        IHaveRoute Route(string route, bool doNotEncode, params object[] args);
+        IHaveRoute Route(string route, params object[] args);
+        string Url();
+    }
+
+    public interface IHaveRoute
+    {
+        IHaveQueryParams QueryParam(string name, string value, bool doNotEncodeValue = false);
+        IHaveQueryParams QueryParam<T>(string name, T value, bool doNotEncodeValue = false) where T : struct ;
+        IHaveQueryParams QueryParams<T>(T value, bool doNotEncodeValue = false) where T : class;
+        string Url();
+    }
+
+    public interface IHaveQueryParams
+    {
+        IHaveQueryParams QueryParam(string name, string value, bool doNotEncodeValue = false);
+        IHaveQueryParams QueryParam<T>(string name, T value, bool doNotEncodeValue = false) where T : struct;
+        IHaveQueryParams QueryParams<T>(T value, bool doNotEncodeValue = false) where T : class;
+
+        string Url();
+    }
+
+    public class UrlBuilder : IHaveHost, IHaveRoute, IHaveQueryParams
     {
         private readonly string _host;
         private string _route;
@@ -21,13 +48,13 @@ namespace Bolt.RestClient.Builders
             return new UrlBuilder(host);
         }
 
-        public UrlBuilder Route(string route, bool doNotEncode = false)
+        public IHaveRoute Route(string route, bool doNotEncode = false)
         {
             _route = doNotEncode ? route : Uri.EscapeUriString(route);
             return this;
         }
 
-        public UrlBuilder Route(string route, bool doNotEncode, params object[] args)
+        public IHaveRoute Route(string route, bool doNotEncode, params object[] args)
         {
             _route = doNotEncode
                 ? string.Format(route, args)
@@ -36,32 +63,62 @@ namespace Bolt.RestClient.Builders
             return this;
         }
 
-        public UrlBuilder Route(string route, params object[] args)
+        public IHaveRoute Route(string route, params object[] args)
         {
             return Route(route, false, args);
         }
 
-        public UrlBuilder QueryParam(string name, string value, bool doNotEncodeValue = false)
+        public IHaveQueryParams QueryParam(string name, string value, bool doNotEncodeValue = false)
         {
             if (_queryParams == null) _queryParams = new List<string>();
 
-            _queryParams.Add(string.Format(QueryParamPattern, 
-                name, 
-                Uri.EscapeDataString(value)));
+            AddQueryParam(name, value, doNotEncodeValue);
+
             return this;
         }
 
-        public UrlBuilder QueryParam<T>(string name, T value, bool doNotEncodeValue = false) where T : struct 
+        private void AddQueryParam(string name, string value, bool doNotEncodeValue)
+        {
+            _queryParams.Add(string.Format(QueryParamPattern,
+                name,
+                doNotEncodeValue ? value : Uri.EscapeDataString(value)));
+        }
+
+        public IHaveQueryParams QueryParam<T>(string name, T value, bool doNotEncodeValue = false) where T : struct 
         {
             if(_queryParams == null) _queryParams = new List<string>();
 
-            _queryParams.Add(string.Format(QueryParamPattern,
-                name,
-                Uri.EscapeDataString(value.ToString())));
+            AddQueryParam(name, value.ToString(), doNotEncodeValue);
+
             return this;
         }
 
-        public string Build()
+        public IHaveQueryParams QueryParams<T>(T value, bool doNotEncodeValue = false) where T : class
+        {
+            if (value == null) return this;
+
+            if(_queryParams == null) _queryParams = new List<string>();
+
+            var properties = value.GetType().GetProperties().Where(x => x.CanRead);
+
+            foreach (var propertyInfo in properties)
+            {
+                var propertyValue = propertyInfo.GetValue(value);
+
+                if (propertyValue == null) continue;
+                
+                var valueAsString = propertyValue.ToString();
+
+                if (!string.IsNullOrWhiteSpace(valueAsString))
+                {
+                    AddQueryParam(propertyInfo.Name, valueAsString, doNotEncodeValue);
+                }
+            }
+
+            return this;
+        }
+
+        internal string Build()
         {
             var sb = new StringBuilder();
 
@@ -79,6 +136,11 @@ namespace Bolt.RestClient.Builders
             }
 
             return sb.ToString().TrimEnd('&');
+        }
+
+        public string Url()
+        {
+            return Build();
         }
     }
 }

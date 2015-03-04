@@ -23,14 +23,14 @@ namespace Bolt.RestClient.IntegrationTests
                 .WithTimeTakenNotifier(new NlogReportTimeTaken(Bolt.Logger.NLog.LoggerFactory.Create<NlogReportTimeTaken>()))
                 .WithSerializer(new JsonSerializer()).Build();
 
-            sut.For(UrlBuilder.Host(BaseUrl).Route("/api/v1/books"))
+            sut.For(UrlBuilder.Host(BaseUrl).Route("/api/v1/books").Url())
                     .Timeout(5000)
                     .Post(new Book
                     {
                         Title = string.Format("test {0}", 1)
                     });
 
-            var d = sut.For(UrlBuilder.Host(BaseUrl).Route("/api/v1/books"))
+            var d = sut.For(UrlBuilder.Host(BaseUrl).Route("/api/v1/books").Url())
                     .Timeout(5000)
                     .PostAsync(new Book
                     {
@@ -48,7 +48,7 @@ namespace Bolt.RestClient.IntegrationTests
 
                 tasks[0] = Profile.ExecuteAsync("1st call", () =>
                 {
-                    return sut.For(UrlBuilder.Host(BaseUrl).Route("/api/v1/books"))
+                    return sut.For(UrlBuilder.Host(BaseUrl).Route("/api/v1/books").Url())
                     .Timeout(5000)
                     .PostAsync(new Book
                     {
