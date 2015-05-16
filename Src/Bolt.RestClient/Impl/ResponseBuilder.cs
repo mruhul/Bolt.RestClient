@@ -41,6 +41,15 @@ namespace Bolt.RestClient.Impl
             return response;
         }
 
+        public RestResponse Build<TRestRequest>(InterceptedResponse interceptedResponse, TRestRequest restRequest) where TRestRequest : RestRequest
+        {
+            var response = BuildBasicResponse<RestResponse>(interceptedResponse);
+            
+            _errorLoader.LoadError(response, GetSerializer(restRequest.Accept));
+
+            return response;
+        }
+
         public RestResponse<T> BuildWithBody<TRestRequest,T>(
             HttpWebResponse webResponse,
             TRestRequest restRequest)
@@ -59,6 +68,22 @@ namespace Bolt.RestClient.Impl
             if (response.Succeed && webResponse.ContentLength > 0)
             {
                 response.Output = GetSerializer(restRequest.Accept).Deserialize<T>(response.RawBody);
+
+                return response;
+            }
+
+            _errorLoader.LoadError(response, GetSerializer(restRequest.Accept));
+
+            return response;
+        }
+
+        public RestResponse<T> BuildWithBody<TRestRequest, T>(InterceptedResponse interceptedResponse, TRestRequest restRequest) where TRestRequest : RestRequest
+        {
+            var response = BuildBasicResponse<RestResponse<T>>(interceptedResponse);
+
+            if (response.Succeed && !string.IsNullOrWhiteSpace(interceptedResponse.RawBody))
+            {
+                response.Output = GetSerializer(restRequest.Accept).Deserialize<T>(interceptedResponse.RawBody);
 
                 return response;
             }
@@ -171,6 +196,21 @@ namespace Bolt.RestClient.Impl
             response.Headers = headers;
             response.ReasonPhrase = httpResponse.StatusDescription;
             response.Succeed = IsSuccesStatusCode(httpResponse.StatusCode);
+            return response;
+        }
+
+        private TRestResponse BuildBasicResponse<TRestResponse>(InterceptedResponse interceptedResponse)
+            where TRestResponse : RestResponse, new()
+        {
+            var response = new TRestResponse
+            {
+                Location = interceptedResponse.Location,
+                StatusCode = interceptedResponse.StatusCode,
+                Headers = interceptedResponse.Headers,
+                ReasonPhrase = interceptedResponse.StatusDescription,
+                Succeed = IsSuccesStatusCode(interceptedResponse.StatusCode)
+            };
+
             return response;
         }
 

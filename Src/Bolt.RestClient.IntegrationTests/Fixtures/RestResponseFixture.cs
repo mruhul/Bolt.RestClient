@@ -12,7 +12,7 @@ namespace Bolt.RestClient.IntegrationTests.Fixtures
 {
     public class RestResponseFixture
     {
-        private const string BaseUrl = "http://localhost:8080";
+        private const string BaseUrl = "http://localhost:8081";
 
         public RestResponse<IEnumerable<Book>> GetBooksResponse
         {
@@ -125,10 +125,16 @@ namespace Bolt.RestClient.IntegrationTests.Fixtures
             }
         }
 
+        public IEnumerable<Book> GetFakeBooks()
+        {
+            return GetFluentRestClient("http://example-api.com/books/1")
+                .Get<IEnumerable<Book>>().Output;
+        } 
+
         private static FluentRestClient GetFluentRestClient(string url)
         {
             return RestClientFactory.Create()
-                .For(UrlBuilder.Host(BaseUrl)
+                .For(url.StartsWith("http://") ? UrlBuilder.Host(url) : UrlBuilder.Host(BaseUrl)
                     .Route(url))
                 .AcceptJson()
                 .RetryOnFailure(3)

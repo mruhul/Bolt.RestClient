@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -12,20 +13,32 @@ namespace Bolt.RestClient.Impl
         private readonly IRequestExecutor _requestExecutor;
         private readonly IResponseBuilder _responsBuilder;
         private readonly ILogger _logger;
+        private readonly IEnumerable<IRequestFilter> _filters;
+        private readonly IInterceptorExecutor _interceptorExecutor;
 
         public RestClient(IRequestExecutor requestExecutor,
             IResponseBuilder responsBuilder,
+            IEnumerable<IRequestFilter> filters,
+            IInterceptorExecutor interceptorExecutor,
             ILogger logger)
         {
             _requestExecutor = requestExecutor;
             _responsBuilder = responsBuilder;
             _logger = logger;
+            _filters = filters;
+            _interceptorExecutor = interceptorExecutor;
 
             logger.Trace("RestClient initialized");
         }
 
         public async Task<RestResponse> RequestAsync(RestRequest restRequest)
         {
+            ApplyRequestFilters(restRequest);
+
+            var response = _interceptorExecutor.Execute(restRequest);
+
+            if (response != null) return response;
+
             return await WithRetry(async () =>
             {
                 using (var httpResponse = await _requestExecutor.ExecuteAsync(restRequest))
@@ -37,6 +50,12 @@ namespace Bolt.RestClient.Impl
         
         public async Task<RestResponse> RequestAsync<TInput>(RestRequest<TInput> restRequest)
         {
+            ApplyRequestFilters(restRequest);
+
+            var response = await _interceptorExecutor.ExecuteAsync(restRequest);
+
+            if (response != null) return response;
+
             return await WithRetry(async () =>
             {
                 using (var httpResponse = await _requestExecutor.ExecuteAsync(restRequest))
@@ -48,6 +67,12 @@ namespace Bolt.RestClient.Impl
 
         public async Task<RestResponse<TOutput>> RequestAsync<TOutput>(RestRequest restRequest)
         {
+            ApplyRequestFilters(restRequest);
+
+            var response = await _interceptorExecutor.ExecuteAsync<RestRequest,TOutput>(restRequest);
+
+            if (response != null) return response;
+
             return await WithRetry(async () =>
             {
                 using (var httpResponse = await _requestExecutor.ExecuteAsync(restRequest))
@@ -59,6 +84,12 @@ namespace Bolt.RestClient.Impl
 
         public async Task<RestResponse<TOutput>> RequestAsync<TInput, TOutput>(RestRequest<TInput> restRequest)
         {
+            ApplyRequestFilters(restRequest);
+
+            var response = await _interceptorExecutor.ExecuteAsync<RestRequest<TInput>, TOutput>(restRequest);
+
+            if (response != null) return response;
+
             return await WithRetry(async () =>
             {
                 using (var httpResponse = await _requestExecutor.ExecuteAsync(restRequest))
@@ -70,6 +101,12 @@ namespace Bolt.RestClient.Impl
 
         public RestResponse Request(RestRequest restRequest)
         {
+            ApplyRequestFilters(restRequest);
+
+            var response = _interceptorExecutor.Execute(restRequest);
+
+            if (response != null) return response;
+
             return WithRetry(() =>
             {
                 using (var httpResponse = _requestExecutor.Execute(restRequest))
@@ -81,6 +118,12 @@ namespace Bolt.RestClient.Impl
 
         public RestResponse Request<TInput>(RestRequest<TInput> restRequest)
         {
+            ApplyRequestFilters(restRequest);
+
+            var response = _interceptorExecutor.Execute(restRequest);
+
+            if (response != null) return response;
+
             return WithRetry(() =>
             {
                 using (var httpResponse = _requestExecutor.Execute(restRequest))
@@ -92,6 +135,12 @@ namespace Bolt.RestClient.Impl
 
         public RestResponse<TOutput> Request<TOutput>(RestRequest restRequest)
         {
+            ApplyRequestFilters(restRequest);
+
+            var response = _interceptorExecutor.Execute<RestRequest, TOutput>(restRequest);
+
+            if (response != null) return response;
+
             return WithRetry(() =>
             {
                 using (var httpResponse = _requestExecutor.Execute(restRequest))
@@ -103,6 +152,12 @@ namespace Bolt.RestClient.Impl
 
         public RestResponse<TOutput> Request<TInput, TOutput>(RestRequest<TInput> restRequest)
         {
+            ApplyRequestFilters(restRequest);
+
+            var response = _interceptorExecutor.Execute<RestRequest<TInput>, TOutput>(restRequest);
+
+            if (response != null) return response;
+
             return WithRetry(() =>
             {
                 using (var httpResponse = _requestExecutor.Execute(restRequest))
@@ -174,6 +229,20 @@ namespace Bolt.RestClient.Impl
 
             return WithRetry(func, times - 1);
         }
-        
+
+        private void ApplyRequestFilters<TRestRequest>(TRestRequest request) where TRestRequest : RestRequest
+        {
+            if (_filters == null) return;
+
+            foreach (var requestFilter in _filters)
+            {
+                if (_logger.IsTraceEnabled)
+                {
+                    _logger.Trace("Applying request filter {0}", requestFilter.GetType());
+                }
+
+                requestFilter.Filter(request);
+            }
+        }
     }
 }

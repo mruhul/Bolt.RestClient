@@ -126,6 +126,30 @@ namespace Bolt.RestClient.Builders
 
         #endregion
 
+        #region interceptors
+
+        private List<IRequestInterceptor> _interceptors;
+
+        public RestClientBuilder WithInterceptors(IEnumerable<IRequestInterceptor> interceptors)
+        {
+            if(_interceptors == null) _interceptors = new List<IRequestInterceptor>();
+
+            _interceptors.AddRange(interceptors);
+
+            return this;
+        }
+
+        public RestClientBuilder WithInterceptor(IRequestInterceptor interceptor)
+        {
+            if (_interceptors == null) _interceptors = new List<IRequestInterceptor>();
+
+            _interceptors.Add(interceptor);
+
+            return this;
+        }
+
+        #endregion
+
         public RestClientBuilder WithErrorLoader(IErrorLoader errorLoader)
         {
             _errorLoader = errorLoader;
@@ -146,10 +170,11 @@ namespace Bolt.RestClient.Builders
             if(_httpWebRequestFactory == null) _httpWebRequestFactory = new HttpWebRequestFactory(_settings, _logger);
             if(_httpClientFactory == null) _httpClientFactory = new HttpClientFactory(_settings);
 
-            var requestExecutor = new RequestExecutor(new ExecutionTimeProfiler(_timeTakenNotifiers), _httpWebRequestFactory, _httpClientFactory, _logger, _filters, _serializers);
+            var requestExecutor = new RequestExecutor(new ExecutionTimeProfiler(_timeTakenNotifiers), _httpWebRequestFactory, _httpClientFactory, _logger, _filters, _interceptors, _serializers);
             var responseBuilder = new ResponseBuilder(_errorLoader, _serializers);
+            var interceptorProvider = new InterceptorExecutor(_interceptors, responseBuilder, _logger);
 
-            return new Impl.RestClient(requestExecutor, responseBuilder, _logger);
+            return new Impl.RestClient(requestExecutor, responseBuilder, _filters, interceptorProvider, _logger);
         }
     }
 }

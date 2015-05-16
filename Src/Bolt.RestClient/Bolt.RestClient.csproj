@@ -50,6 +50,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Builders\RestClientBuilder.cs" />
+    <Compile Include="Dto\InterceptedResponse.cs" />
     <Compile Include="Dto\ContentTypes.cs" />
     <Compile Include="Dto\Error.cs" />
     <Compile Include="Dto\ErrorContainer.cs" />
@@ -62,7 +63,10 @@
     <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="IExecutionTimeProfiler.cs" />
     <Compile Include="IHttpClientFactory.cs" />
+    <Compile Include="IInterceptorExecutor.cs" />
     <Compile Include="Impl\HttpClientFactory.cs" />
+    <Compile Include="Impl\InterceptorExecutor.cs" />
+    <Compile Include="IRequestInterceptor.cs" />
     <Compile Include="IResponseBuilder.cs" />
     <Compile Include="Impl\ErrorLoader.cs" />
     <Compile Include="Impl\ResponseBuilder.cs" />

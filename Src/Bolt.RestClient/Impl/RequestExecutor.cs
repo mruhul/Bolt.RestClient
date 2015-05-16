@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -10,6 +9,7 @@ using Bolt.Logger;
 using Bolt.RestClient.Dto;
 using Bolt.RestClient.Extensions;
 using Bolt.Serializer;
+using ContentTypes = Bolt.RestClient.Dto.ContentTypes;
 
 namespace Bolt.RestClient.Impl
 {
@@ -19,7 +19,6 @@ namespace Bolt.RestClient.Impl
         private readonly IHttpWebRequestFactory _httpWebRequestFactory;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger _logger;
-        private readonly IEnumerable<IRequestFilter> _filters;
         private readonly IEnumerable<ISerializer> _serializers;
 
         public RequestExecutor(IExecutionTimeProfiler profiler, 
@@ -27,13 +26,13 @@ namespace Bolt.RestClient.Impl
             IHttpClientFactory httpClientFactory,
             ILogger logger,
             IEnumerable<IRequestFilter> filters,
+            IEnumerable<IRequestInterceptor> interceptors,
             IEnumerable<ISerializer> serializers)
         {
             _profiler = profiler;
             _httpWebRequestFactory = httpWebRequestFactory;
             _httpClientFactory = httpClientFactory;
             _logger = logger;
-            _filters = filters;
             _serializers = serializers;
 
             _logger.Trace("RequestExecutor instance created");
@@ -79,7 +78,7 @@ namespace Bolt.RestClient.Impl
         {
             var httpRequestMessage = new HttpRequestMessage(restRequest.Method, restRequest.Url);
 
-            httpRequestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(restRequest.Accept.EmptyAlternative(Dto.ContentTypes.Json)));
+            httpRequestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(restRequest.Accept.EmptyAlternative(ContentTypes.Json)));
 
             restRequest.Headers
                 .NullSafe()
@@ -110,17 +109,7 @@ namespace Bolt.RestClient.Impl
         private HttpWebRequest GetHttpWebRequest<TRestRequest>(TRestRequest restRequest) where TRestRequest : RestRequest
         {
             _logger.Trace("Creating HttpWebRequest...");
-
-            foreach (var requestFilter in _filters)
-            {
-                if (_logger.IsTraceEnabled)
-                {
-                    _logger.Trace("Applying request filter {0}", requestFilter.GetType());
-                }
-
-                requestFilter.Filter(restRequest);
-            }
-
+            
             var client = _httpWebRequestFactory.CreateHttpWebRequest(restRequest);
 
             client.Method = restRequest.Method.ToString();

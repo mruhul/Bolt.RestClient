@@ -74,6 +74,7 @@
     <Compile Include="RestClient_Load_Tests.cs" />
     <Compile Include="RestClient_Should_Retry.cs" />
     <Compile Include="When_RestClient_Delete.cs" />
+    <Compile Include="When_RestClient_HasInterceptor.cs" />
     <Compile Include="When_RestClient_Post.cs" />
     <Compile Include="When_RestClient_Post_With_Empty_Title.cs" />
     <Compile Include="When_RestClient_Put.cs" />

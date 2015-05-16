@@ -12,8 +12,18 @@ namespace Bolt.RestClient
             TRestRequest restRequest)
             where TRestRequest : RestRequest;
 
+        RestResponse Build<TRestRequest>(
+            InterceptedResponse interceptedResponse,
+            TRestRequest restRequest)
+            where TRestRequest : RestRequest;
+
         RestResponse<T> BuildWithBody<TRestRequest, T>(
             HttpWebResponse webResponse,
+            TRestRequest restRequest)
+            where TRestRequest : RestRequest;
+
+        RestResponse<T> BuildWithBody<TRestRequest, T>(
+            InterceptedResponse interceptedResponse,
             TRestRequest restRequest)
             where TRestRequest : RestRequest;
 
