@@ -6,9 +6,9 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Bolt.RestClient")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Fluent rest client with filters and interceptors")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Mohammad Ruhul Amin")]
 [assembly: AssemblyProduct("Bolt.RestClient")]
 [assembly: AssemblyCopyright("Copyright ©  2014")]
 [assembly: AssemblyTrademark("")]
