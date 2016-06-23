@@ -60,7 +60,7 @@ namespace Bolt.RestClient.Impl
 
             var httpRequestMessage = GetHttpRequestMessage(restRequest);
 
-            return await _profiler.ProfileAsync(restRequest, async () => await client.SendAsync(httpRequestMessage).ConfigureAwait(false));
+            return await _profiler.ProfileAsync(restRequest, async () => await client.SendAsync(httpRequestMessage));
         }
         
         public async Task<HttpResponseMessage> ExecuteAsync<TInput>(RestRequest<TInput> restRequest)
@@ -71,7 +71,7 @@ namespace Bolt.RestClient.Impl
 
             httpRequestMessage.Content = new StringContent(_serializers.EnsureSerializer(restRequest.ContentType).Serialize(restRequest.Body), Encoding.UTF8, restRequest.ContentType);
 
-            return await _profiler.ProfileAsync(restRequest, async () => await client.SendAsync(httpRequestMessage).ConfigureAwait(false));
+            return await _profiler.ProfileAsync(restRequest, async () => await client.SendAsync(httpRequestMessage));
         }
         
         private HttpRequestMessage GetHttpRequestMessage(RestRequest restRequest)

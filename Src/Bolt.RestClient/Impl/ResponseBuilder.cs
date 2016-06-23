@@ -169,7 +169,7 @@ namespace Bolt.RestClient.Impl
             {
                 if (httpContent == null) return string.Empty;
 
-                return await httpContent.ReadAsStringAsync().ConfigureAwait(false);
+                return await httpContent.ReadAsStringAsync();
             }
         }
 
