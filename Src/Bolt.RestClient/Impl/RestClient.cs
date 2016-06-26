@@ -45,7 +45,7 @@ namespace Bolt.RestClient.Impl
                 {
                     return await _responsBuilder.BuildAsync(httpResponse, restRequest);
                 }
-            }, restRequest.RetryOnFailure);
+            }, restRequest.RetryOnFailure, restRequest);
         }
         
         public async Task<RestResponse> RequestAsync<TInput>(RestRequest<TInput> restRequest)
@@ -62,7 +62,7 @@ namespace Bolt.RestClient.Impl
                 {
                     return await _responsBuilder.BuildAsync(httpResponse, restRequest);
                 }
-            }, restRequest.RetryOnFailure);
+            }, restRequest.RetryOnFailure, restRequest);
         }
 
         public async Task<RestResponse<TOutput>> RequestAsync<TOutput>(RestRequest restRequest)
@@ -79,7 +79,7 @@ namespace Bolt.RestClient.Impl
                 {
                     return await _responsBuilder.BuildWithBodyAsync<RestRequest, TOutput>(httpResponse, restRequest);
                 }
-            }, restRequest.RetryOnFailure);
+            }, restRequest.RetryOnFailure, restRequest);
         }
 
         public async Task<RestResponse<TOutput>> RequestAsync<TInput, TOutput>(RestRequest<TInput> restRequest)
@@ -96,7 +96,7 @@ namespace Bolt.RestClient.Impl
                 {
                     return await _responsBuilder.BuildWithBodyAsync<RestRequest, TOutput>(httpResponse, restRequest);
                 }
-            }, restRequest.RetryOnFailure);
+            }, restRequest.RetryOnFailure, restRequest);
         }
 
         public RestResponse Request(RestRequest restRequest)
@@ -113,7 +113,7 @@ namespace Bolt.RestClient.Impl
                 {
                     return _responsBuilder.Build(httpResponse, restRequest);
                 }
-            }, restRequest.RetryOnFailure);
+            }, restRequest.RetryOnFailure, restRequest);
         }
 
         public RestResponse Request<TInput>(RestRequest<TInput> restRequest)
@@ -130,7 +130,7 @@ namespace Bolt.RestClient.Impl
                 {
                     return _responsBuilder.Build(httpResponse, restRequest);
                 }    
-            }, restRequest.RetryOnFailure);
+            }, restRequest.RetryOnFailure, restRequest);
         }
 
         public RestResponse<TOutput> Request<TOutput>(RestRequest restRequest)
@@ -147,7 +147,7 @@ namespace Bolt.RestClient.Impl
                 {
                     return _responsBuilder.BuildWithBody<RestRequest, TOutput>(httpResponse, restRequest);
                 }
-            }, restRequest.RetryOnFailure);    
+            }, restRequest.RetryOnFailure, restRequest);    
         }
 
         public RestResponse<TOutput> Request<TInput, TOutput>(RestRequest<TInput> restRequest)
@@ -164,7 +164,7 @@ namespace Bolt.RestClient.Impl
                 {
                     return _responsBuilder.BuildWithBody<RestRequest, TOutput>(httpResponse, restRequest);
                 }
-            }, restRequest.RetryOnFailure);
+            }, restRequest.RetryOnFailure, restRequest);
         }
         
         private static readonly HttpStatusCode[] RetryableStatuses =
@@ -180,8 +180,10 @@ namespace Bolt.RestClient.Impl
             return RetryableStatuses.Any(x => x == statusCode);
         }
 
-        private async Task<TReply> WithRetry<TReply>(Func<Task<TReply>> func, int times) where TReply : RestResponse
+        private async Task<TReply> WithRetry<TReply>(Func<Task<TReply>> func, int times, RestRequest request) where TReply : RestResponse
         {
+            _logger.Trace("Start executing {0} : {1} with Retry {2}", request.Method, request.Url, times);
+
             if (times == 0) return await func.Invoke();
 
             try
@@ -198,14 +200,16 @@ namespace Bolt.RestClient.Impl
                 // escape so that we can retry
             }
 
-            _logger.Warn("Retrying after failure. Current Retry Value {0}", times);
+            _logger.Warn("Retrying after failure for {0} : {1} {2} retry left", request.Method, request.Url, times - 1);
 
-            return await WithRetry(func, times - 1);
+            return await WithRetry(func, times - 1, request);
         }
 
 
-        private TReply WithRetry<TReply>(Func<TReply> func, int times) where TReply : RestResponse
+        private TReply WithRetry<TReply>(Func<TReply> func, int times, RestRequest request) where TReply : RestResponse
         {
+            _logger.Trace("Start executing {0} : {1} with Retry {2}", request.Method, request.Url, times);
+
             if (times == 0) return func.Invoke();
 
             try
@@ -225,9 +229,9 @@ namespace Bolt.RestClient.Impl
                 }
             }
 
-            _logger.Warn("Retrying after failure. Current Retry Value {0}", times);
+            _logger.Warn("Retrying after failure for {0} : {1} {2} retry left", request.Method, request.Url, times - 1);
 
-            return WithRetry(func, times - 1);
+            return WithRetry(func, times - 1, request);
         }
 
         private void ApplyRequestFilters<TRestRequest>(TRestRequest request) where TRestRequest : RestRequest
