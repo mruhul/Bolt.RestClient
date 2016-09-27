@@ -35,7 +35,8 @@ namespace Bolt.RestClient.Impl
 
         private HttpClient CreateClient(RestRequest request)
         {
-            var client = new HttpClient(CreateHandler(_settings)) {Timeout = request.Timeout == TimeSpan.Zero ? TimeSpan.FromSeconds(1) : request.Timeout };
+            var handler = CreateHandler(_settings);
+            var client = new HttpClient(handler, true) {Timeout = request.Timeout == TimeSpan.Zero ? TimeSpan.FromSeconds(1) : request.Timeout };
             
             return client;
         }
